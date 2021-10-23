@@ -1,0 +1,25 @@
+If we want to get exactly-matching regions between file1.bed and file2.bed we should use R scripts or bedmap from bedops.
+bedmap --count --exact file1.bed file2.bed | awk '{s+=$1}END{print s;}' > output.bed.bed
+
+We can do fractional ("fuzzy") overlaps, where (for example) at least 50% of an file2.bed region has to overlap an file1.bed region.
+bedmap --count --fraction-map 0.5 file1.bed file2.bed | awk '{s+=$1}END{print s;}' > output.bed
+
+To get a straight-up count of no overlaps, build the inverse — or mask — of our file2.bed regions, using Kent tools fetchChromSizes and BEDOPS bedops --difference.
+fetchChromSizes file2 | awk '{print $1"\t0\t"$2}' | sort-bed - > file2.bounds.bed
+bedops --difference file2.bounds.bed file2.bed > file2.masked.bed
+
+After this we should apply --count --fraction-ref 1.0 to count the number of reference (hg37) elements which completely overlap these masked hg38 regions:
+bedmap --count --fraction-ref 1.0 file1.bed file2.masked.bed | awk '{s+=$1}END{print s;}' > output.bed
+
+
+
+If you work in linux you'll need to download Bedops using: 
+wget https://github.com/bedops/bedops/releases/download/v2.4.40/bedops_linux_x86_64-v2.4.40.tar.bz2
+
+And: 
+tar jxvf bedops_linux_x86_64-v2.4.40.tar.bz2
+
+After this commands you should install bedmap: 
+sudo apt install bedmap
+
+thats all :)
